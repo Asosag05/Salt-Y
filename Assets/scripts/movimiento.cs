@@ -6,10 +6,17 @@ public class movimiento : MonoBehaviour
     [SerializeField] float jumpForce = 12f;
     [SerializeField] LayerMask groundLayer;
 
-    Rigidbody2D rb;
-    BoxCollider2D col;
-    float moveInput;
-    bool jumpPressed;
+    [SerializeField] float jumpCutMultiplier = 0.5f;
+
+    [SerializeField] float coyoteTime = 0.15f;
+    private float coyoteCounter;
+
+    [SerializeField] float jumpBufferTime = 0.15f;
+    private float jumpBufferCounter;
+
+    private Rigidbody2D rb;
+    private BoxCollider2D col;
+    private float direction;
 
     void Awake()
     {
@@ -19,26 +26,51 @@ public class movimiento : MonoBehaviour
 
     void Update()
     {
-        moveInput = 0f;
-        if (Input.GetKey(KeyCode.A)) moveInput -= 1f;
-        if (Input.GetKey(KeyCode.D)) moveInput += 1f;
+        
+        direction = Input.GetAxisRaw("Horizontal");
 
-        if (Input.GetKeyDown(KeyCode.Space)) jumpPressed = true;
+       if (IsGrounded())
+        {
+            coyoteCounter = coyoteTime;
+        }
+        else
+        {
+            coyoteCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetButtonDown("Jump"))
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0f)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
+            coyoteCounter = 0f;
+        }
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        rb.linearVelocity = new Vector2(moveInput * speed, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(direction*speed, rb.linearVelocity.y);
 
-        if (jumpPressed && IsGrounded())
+        if (jumpBufferCounter > 0f && coyoteCounter > 0f)
+        {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-
-        jumpPressed = false;
+            jumpBufferCounter = 0f;
+            coyoteCounter = 0f;
+        }
     }
 
     bool IsGrounded()
     {
-        Vector2 size = new Vector2(col.bounds.size.x * 0.9f, col.bounds.size.y);
-        return Physics2D.BoxCast(col.bounds.center, size, 0f, Vector2.down, 0.05f, groundLayer);
+        Vector2 boxSize = new Vector2(col.bounds.size.x * 0.8f, 0.05f);
+        Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y);
+        return Physics2D.BoxCast(origin, boxSize, 0f, Vector2.down, 0.05f, groundLayer);
     }
+
 }
