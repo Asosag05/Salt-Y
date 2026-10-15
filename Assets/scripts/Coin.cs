@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Coin : MonoBehaviour
 {
@@ -7,7 +8,7 @@ public class Coin : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             Debug.Log("¡Moneda recogida!");
-            Destroy(gameObject);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }
 }
