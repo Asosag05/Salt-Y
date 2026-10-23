@@ -14,6 +14,9 @@ public class movimiento : MonoBehaviour
     [SerializeField] float jumpBufferTime = 0.15f;
     private float jumpBufferCounter;
 
+    [SerializeField] float swingForce = 30f;
+    private SpringJoint2D springJoint;
+
     private Rigidbody2D rb;
     private BoxCollider2D col;
     private float direction;
@@ -22,6 +25,8 @@ public class movimiento : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<BoxCollider2D>();
+
+        springJoint = GetComponent<SpringJoint2D>();
     }
 
     void Update()
@@ -38,7 +43,7 @@ public class movimiento : MonoBehaviour
             coyoteCounter -= Time.deltaTime;
         }
 
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.W))
         {
             jumpBufferCounter = jumpBufferTime;
         }
@@ -47,7 +52,7 @@ public class movimiento : MonoBehaviour
             jumpBufferCounter -= Time.deltaTime;
         }
 
-        if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0f)
+        if ((Input.GetButtonUp("Jump") || Input.GetKeyUp(KeyCode.W)) && rb.linearVelocity.y > 0f)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
             coyoteCounter = 0f;
@@ -56,8 +61,12 @@ public class movimiento : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rb.linearVelocity = new Vector2(direction*speed, rb.linearVelocity.y);
-
+        if (springJoint != null && springJoint.enabled){
+            rb.AddForce(Vector2.right * direction * swingForce);
+        }
+        else{
+            rb.linearVelocity = new Vector2(direction * speed, rb.linearVelocity.y);
+        }
         if (jumpBufferCounter > 0f && coyoteCounter > 0f)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);

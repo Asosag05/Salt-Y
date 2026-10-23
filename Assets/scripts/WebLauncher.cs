@@ -15,19 +15,14 @@ public class WebLauncher : MonoBehaviour
             springJoint.enabled = false;
         }
     }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.W)){
+        if (Input.GetMouseButtonDown(0)){
             IntentarEnganche();
         }
-        else if (Input.GetKeyUp(KeyCode.W)){
+        else if (Input.GetMouseButtonUp(0)){
             SoltarEnganche();
         }
     }
@@ -41,13 +36,17 @@ public class WebLauncher : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(posicionActual, direccion, distanciaMax, capasEnganchables);
         if (hit.collider != null){
             puntoDeAnclaje = hit.point;
-            telarana.Desplegar(puntoDeAnclaje, posicionActual);
-            if (springJoint != null){
+            telarana.DispararAnimacion(puntoDeAnclaje, posicionActual, ConectarFisicas);
+        }
+    }
+
+    private void ConectarFisicas()
+    {
+        if (springJoint != null){
                 springJoint.connectedAnchor = puntoDeAnclaje;
-                springJoint.distance = Vector2.Distance(posicionActual, puntoDeAnclaje) * 0.8f;
+                springJoint.distance = Vector2.Distance(transform.position, puntoDeAnclaje) * 1.0f;
                 springJoint.enabled = true;
             }
-        }
     }
 
     private void SoltarEnganche()

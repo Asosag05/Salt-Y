@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,11 +21,17 @@ public class SpiderWeb : MonoBehaviour
     public Vector2 gravity = new Vector2(0f, -9.8f);
     public int constraintIterations = 50;
 
+    public float velocidadDisparo = 60f;
+
     private LineRenderer lineRenderer;
     private List<WebNode> nodes = new List<WebNode>();
 
     private Vector2 puntoDeAnclaje;
     private bool estaDesplegada = false;
+
+    private bool estaDisparando = false;
+    private Vector2 posicionPunta;
+    private Action alConectar;
 
     void Awake()
     {
@@ -35,7 +42,20 @@ public class SpiderWeb : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (estaDesplegada){
+        if (estaDisparando){
+            posicionPunta = Vector2.MoveTowards(posicionPunta, puntoDeAnclaje, velocidadDisparo * Time.deltaTime);
+            lineRenderer.SetPosition(0, playerTransform.position);
+            lineRenderer.SetPosition(1, posicionPunta);
+
+            if (Vector2.Distance(posicionPunta, puntoDeAnclaje) < 0.1f){
+                estaDisparando = false;
+                Desplegar(puntoDeAnclaje, playerTransform.position);
+                if (alConectar != null){
+                    alConectar.Invoke();
+                }
+            }
+        }
+        else if (estaDesplegada){
             DrawWeb();
         }
     }
@@ -47,6 +67,20 @@ public class SpiderWeb : MonoBehaviour
         }
         Simulate();
         ApplyConstraints();
+    }
+
+    public void DispararAnimacion (Vector2 anclaje, Vector2 posicionArana, Action callback)
+    {
+        puntoDeAnclaje = anclaje;
+        posicionPunta = posicionArana;
+        alConectar = callback;
+
+        estaDisparando = true;
+        estaDesplegada = false;
+
+        lineRenderer.positionCount = 2;
+        lineRenderer.SetPosition(0, posicionArana);
+        lineRenderer.SetPosition(1, posicionArana);
     }
 
     public void Desplegar(Vector2 anclaje, Vector2 posicionArana)
@@ -69,6 +103,8 @@ public class SpiderWeb : MonoBehaviour
     public void Cortar()
     {
         estaDesplegada = false;
+        estaDisparando = false;
+        alConectar = null;
         lineRenderer.positionCount = 0;
         nodes.Clear();
     }
