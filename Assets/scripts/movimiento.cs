@@ -16,6 +16,7 @@ public class movimiento : MonoBehaviour
 
     [SerializeField] float swingForce = 30f;
     private SpringJoint2D springJoint;
+    [SerializeField] float maxSwingSpeed = 15f;
 
     private Rigidbody2D rb;
     private BoxCollider2D col;
@@ -63,6 +64,9 @@ public class movimiento : MonoBehaviour
     {
         if (springJoint != null && springJoint.enabled){
             rb.AddForce(Vector2.right * direction * swingForce);
+            if (Mathf.Abs(rb.linearVelocity.x) > maxSwingSpeed){
+                rb.linearVelocity = new Vector2(Mathf.Sign(rb.linearVelocity.x) * maxSwingSpeed, rb.linearVelocity.y);
+            }
         }
         else{
             rb.linearVelocity = new Vector2(direction * speed, rb.linearVelocity.y);
@@ -75,7 +79,7 @@ public class movimiento : MonoBehaviour
         }
     }
 
-    bool IsGrounded()
+    public bool IsGrounded()
     {
         Vector2 boxSize = new Vector2(col.bounds.size.x * 0.8f, 0.05f);
         Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y);
