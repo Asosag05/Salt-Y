@@ -96,6 +96,7 @@ public class SpiderWeb : MonoBehaviour
         for (int i = 0; i < cantidadNodos; i++){
             Vector2 pos = anclaje + (direccionNormalizada * (i * nodeDistance));
             nodes.Add(new WebNode(pos));
+            lineRenderer.SetPosition(i, pos);
         }
         estaDesplegada = true;
     }
