@@ -19,7 +19,7 @@ public class movimiento : MonoBehaviour
 
     private float coyoteCounter;
     private float jumpBufferCounter;
-    private SpringJoint2D springJoint;
+    private DistanceJoint2D distanceJoint;
     private Rigidbody2D rb;
     private BoxCollider2D col;
     private float direction;
@@ -28,10 +28,10 @@ public class movimiento : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<BoxCollider2D>();
-        springJoint = GetComponent<SpringJoint2D>();
+        distanceJoint = GetComponent<DistanceJoint2D>();
     }
 
-    void Update()
+   void Update()
     {
         direction = Input.GetAxisRaw("Horizontal");
 
@@ -44,7 +44,13 @@ public class movimiento : MonoBehaviour
             coyoteCounter -= Time.deltaTime;
         }
 
-        if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.W))
+        // Comprobamos si estamos balanceándonos
+        bool isSwinging = distanceJoint != null && distanceJoint.enabled;
+
+        // Si estamos balanceándonos, 'W' es solo para enrollar la cuerda, no para saltar
+        bool jumpPressed = Input.GetButtonDown("Jump") || (!isSwinging && Input.GetKeyDown(KeyCode.W));
+
+        if (jumpPressed)
         {
             jumpBufferCounter = jumpBufferTime;
         }
@@ -53,7 +59,8 @@ public class movimiento : MonoBehaviour
             jumpBufferCounter -= Time.deltaTime;
         }
 
-        if ((Input.GetButtonUp("Jump") || Input.GetKeyUp(KeyCode.W)) && rb.linearVelocity.y > 0f)
+        bool jumpReleased = Input.GetButtonUp("Jump") || (!isSwinging && Input.GetKeyUp(KeyCode.W));
+        if (jumpReleased && rb.linearVelocity.y > 0f)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
             coyoteCounter = 0f;
@@ -62,7 +69,7 @@ public class movimiento : MonoBehaviour
 
     private void FixedUpdate()
     {
-        bool isSwinging = springJoint != null && springJoint.enabled;
+        bool isSwinging = distanceJoint != null && distanceJoint.enabled;
 
         if (isSwinging)
         {

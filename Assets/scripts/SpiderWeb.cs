@@ -124,25 +124,36 @@ public class SpiderWeb : MonoBehaviour
 
     private void ApplyConstraints()
     {
-        for (int iteration = 0; iteration < constraintIterations; iteration++){
+        for (int iteration = 0; iteration < constraintIterations; iteration++)
+        {
             nodes[0].currentPos = puntoDeAnclaje;
-            if (playerTransform != null){
+            if (playerTransform != null)
+            {
                 nodes[nodes.Count - 1].currentPos = playerTransform.position;
             }
-            for (int i = 0; i < nodes.Count - 1; i++){
+
+            for (int i = 0; i < nodes.Count - 1; i++)
+            {
                 WebNode nodeA = nodes[i];
                 WebNode nodeB = nodes[i + 1];
                 Vector2 direction = nodeB.currentPos - nodeA.currentPos;
                 float currentDistance = direction.magnitude;
-                float error = currentDistance - nodeDistance;
-                Vector2 correctionDir = direction.normalized;
-                Vector2 correctionVector = correctionDir * error;
-                if (i != 0){
-                    nodeA.currentPos += correctionVector * 0.5f;
-                    nodeB.currentPos -= correctionVector * 0.5f;
-                }
-                else{
-                    nodeB.currentPos -= correctionVector;
+
+                if (currentDistance > nodeDistance)
+                {
+                    float error = currentDistance - nodeDistance;
+                    Vector2 correctionDir = direction / currentDistance;
+                    Vector2 correctionVector = correctionDir * error;
+
+                    if (i != 0)
+                    {
+                        nodeA.currentPos += correctionVector * 0.5f;
+                        nodeB.currentPos -= correctionVector * 0.5f;
+                    }
+                    else
+                    {
+                        nodeB.currentPos -= correctionVector;
+                    }
                 }
             }
         }
@@ -151,6 +162,39 @@ public class SpiderWeb : MonoBehaviour
     private void DrawWeb()
     {
         for (int i = 0; i < nodes.Count; i++){
+            lineRenderer.SetPosition(i, nodes[i].currentPos);
+        }
+    }
+
+    public void SincronizarLongitudVisual(float distanciaActual)
+    {
+        if (!estaDesplegada || nodes.Count < 2 || playerTransform == null) return;
+
+        int nodosObjetivo = Mathf.CeilToInt(distanciaActual / nodeDistance);
+        nodosObjetivo = Mathf.Max(3, nodosObjetivo);
+
+        while (nodes.Count < nodosObjetivo)
+        {
+            Vector2 posPenultimo = nodes[nodes.Count - 2].currentPos;
+            Vector2 posArana = (Vector2)playerTransform.position;
+            
+            Vector2 posNueva = Vector2.Lerp(posPenultimo, posArana, 0.5f);
+            
+            nodes.Insert(nodes.Count - 1, new WebNode(posNueva));
+        }
+
+        while (nodes.Count > nodosObjetivo)
+        {
+            nodes.RemoveAt(nodes.Count - 2);
+        }
+
+        nodes[0].currentPos = puntoDeAnclaje;
+        nodes[nodes.Count - 1].currentPos = playerTransform.position;
+        nodes[nodes.Count - 1].oldPos = playerTransform.position;
+
+        lineRenderer.positionCount = nodes.Count;
+        for (int i = 0; i < nodes.Count; i++)
+        {
             lineRenderer.SetPosition(i, nodes[i].currentPos);
         }
     }

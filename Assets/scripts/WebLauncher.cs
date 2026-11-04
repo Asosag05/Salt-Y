@@ -8,6 +8,10 @@ public class WebLauncher : MonoBehaviour
     public LayerMask capasEnganchables;
 
 
+    [SerializeField] private float velocidadRecoger = 5f; 
+    [SerializeField] private float distanciaMinima = 0.8f; 
+    [SerializeField] private float longitudMaximaCuerda = 15f; 
+
     public float radioAsistencia = 0.1f;
 
 
@@ -20,7 +24,7 @@ public class WebLauncher : MonoBehaviour
     public float radioMira = 0.25f;
     public int sortingOrder = 50;
 
-    private SpringJoint2D springJoint;
+    private DistanceJoint2D distanceJoint;
     private Vector2 puntoDeAnclaje;
 
     private movimiento scriptMovimiento;
@@ -33,9 +37,12 @@ public class WebLauncher : MonoBehaviour
 
     void Awake()
     {
-        springJoint = GetComponent<SpringJoint2D>();
-        if (springJoint != null){
-            springJoint.enabled = false;
+      distanceJoint = GetComponent<DistanceJoint2D>();
+        if (distanceJoint != null)
+        {
+            distanceJoint.enabled = false;
+            distanceJoint.autoConfigureDistance = false;
+            distanceJoint.maxDistanceOnly = true; 
         }
         scriptMovimiento = GetComponent<movimiento>();
         cam = Camera.main;
@@ -48,13 +55,17 @@ public class WebLauncher : MonoBehaviour
         if (scriptMovimiento != null && scriptMovimiento.IsGrounded()){
             puedeDisparar = true;
         }
-        if (springJoint != null && springJoint.enabled){
+        if (distanceJoint != null && distanceJoint.enabled){
             Vector2 posicionActual = transform.position;
             Vector2 direccionAlAnclaje = puntoDeAnclaje - posicionActual;
             float distancia = direccionAlAnclaje.magnitude;
             RaycastHit2D hitObstaculo = Physics2D.Raycast(posicionActual, direccionAlAnclaje.normalized, distancia - 0.2f, capasEnganchables);
             if (hitObstaculo.collider != null){
                 SoltarEnganche();
+            }
+            else
+            {
+                GestionarLongitudCuerda();
             }
         }
         if (Input.GetMouseButtonDown(0)){
@@ -65,6 +76,34 @@ public class WebLauncher : MonoBehaviour
         }
 
         ActualizarIndicador();
+    }
+
+    private void GestionarLongitudCuerda()
+    {
+        bool cuerdaModificada = false;
+
+        if (Input.GetKey(KeyCode.W))
+        {
+            float nuevaDistancia = Mathf.Max(distanciaMinima, distanceJoint.distance - velocidadRecoger * Time.deltaTime);
+            if (!Mathf.Approximately(nuevaDistancia, distanceJoint.distance))
+            {
+                distanceJoint.distance = nuevaDistancia;
+                cuerdaModificada = true;
+            }
+        }
+        else if (Input.GetKey(KeyCode.S))
+        {
+            if (distanceJoint.distance < longitudMaximaCuerda)
+            {
+                distanceJoint.distance = Mathf.Min(longitudMaximaCuerda, distanceJoint.distance + velocidadRecoger * Time.deltaTime);
+                cuerdaModificada = true;
+            }
+        }
+
+        if (cuerdaModificada && telarana != null)
+        {
+            telarana.SincronizarLongitudVisual(distanceJoint.distance);
+        }
     }
 
     private Vector2 ObtenerPosicionRaton()
@@ -86,6 +125,9 @@ public class WebLauncher : MonoBehaviour
             bool encontrado = false;
 
             foreach (Collider2D col in cercanos){
+
+                if (col.gameObject == gameObject) continue;
+
                 Vector2 candidato = col.ClosestPoint(posicionRaton);
                 Vector2 haciaCandidato = candidato - origen;
                 float dist = haciaCandidato.magnitude;
@@ -206,10 +248,16 @@ public class WebLauncher : MonoBehaviour
 
     private void ConectarFisicas()
     {
-        if (springJoint != null){
-            springJoint.connectedAnchor = puntoDeAnclaje;
-            springJoint.distance = Vector2.Distance(transform.position, puntoDeAnclaje) * 1.0f;
-            springJoint.enabled = true;
+       if (distanceJoint != null)
+        {
+            distanceJoint.connectedAnchor = puntoDeAnclaje;
+            distanceJoint.distance = Vector2.Distance(transform.position, puntoDeAnclaje);
+            distanceJoint.enabled = true;
+           
+            distanceJoint.distance = Vector2.Distance(transform.position, puntoDeAnclaje);
+
+            distanceJoint.maxDistanceOnly = true;
+            distanceJoint.enabled = true;
         }
     }
 
@@ -217,8 +265,8 @@ public class WebLauncher : MonoBehaviour
     {
         enganchado = false;
         telarana.Cortar();
-        if (springJoint != null){
-            springJoint.enabled = false;
+        if (distanceJoint != null){
+            distanceJoint.enabled = false;
         }
     }
 
