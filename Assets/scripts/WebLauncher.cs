@@ -10,7 +10,7 @@ public class WebLauncher : MonoBehaviour
 
     [SerializeField] private float velocidadRecoger = 5f; 
     [SerializeField] private float distanciaMinima = 0.8f; 
-    [SerializeField] private float longitudMaximaCuerda = 15f; 
+    [SerializeField] private float longitudMaximaCuerda = 8f; 
 
     public float radioAsistencia = 0.1f;
 
@@ -268,6 +268,7 @@ public class WebLauncher : MonoBehaviour
         if (distanceJoint != null){
             distanceJoint.enabled = false;
         }
+        puedeDisparar = true;
     }
 
     private void OnDrawGizmosSelected()

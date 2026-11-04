@@ -33,6 +33,9 @@ public class SpiderWeb : MonoBehaviour
     private Vector2 posicionPunta;
     private Action alConectar;
 
+    public LayerMask collisionLayer;
+    public float nodeRadius = 0.05f;
+
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -122,41 +125,62 @@ public class SpiderWeb : MonoBehaviour
         }
     }
 
-    private void ApplyConstraints()
+    private void ApplyConstraints(){
+
+    for (int iteration = 0; iteration < constraintIterations; iteration++)
     {
-        for (int iteration = 0; iteration < constraintIterations; iteration++)
+        nodes[0].currentPos = puntoDeAnclaje;
+        if (playerTransform != null)
         {
-            nodes[0].currentPos = puntoDeAnclaje;
-            if (playerTransform != null)
-            {
-                nodes[nodes.Count - 1].currentPos = playerTransform.position;
-            }
+            nodes[nodes.Count - 1].currentPos = playerTransform.position;
+        }
 
-            for (int i = 0; i < nodes.Count - 1; i++)
-            {
-                WebNode nodeA = nodes[i];
-                WebNode nodeB = nodes[i + 1];
-                Vector2 direction = nodeB.currentPos - nodeA.currentPos;
-                float currentDistance = direction.magnitude;
+        for (int i = 0; i < nodes.Count - 1; i++)
+        {
+            WebNode nodeA = nodes[i];
+            WebNode nodeB = nodes[i + 1];
+            Vector2 direction = nodeB.currentPos - nodeA.currentPos;
+            float currentDistance = direction.magnitude;
 
-                if (currentDistance > nodeDistance)
+            if (currentDistance > nodeDistance)
+            {
+                float error = currentDistance - nodeDistance;
+                Vector2 correctionDir = direction / currentDistance;
+                Vector2 correctionVector = correctionDir * error;
+
+                if (i != 0)
                 {
-                    float error = currentDistance - nodeDistance;
-                    Vector2 correctionDir = direction / currentDistance;
-                    Vector2 correctionVector = correctionDir * error;
-
-                    if (i != 0)
-                    {
-                        nodeA.currentPos += correctionVector * 0.5f;
-                        nodeB.currentPos -= correctionVector * 0.5f;
-                    }
-                    else
-                    {
-                        nodeB.currentPos -= correctionVector;
-                    }
+                    nodeA.currentPos += correctionVector * 0.5f;
+                    nodeB.currentPos -= correctionVector * 0.5f;
+                }
+                else
+                {
+                    nodeB.currentPos -= correctionVector;
                 }
             }
         }
+
+        for (int i = 1; i < nodes.Count - 1; i++)
+        {
+            Collider2D hit = Physics2D.OverlapCircle(nodes[i].currentPos, nodeRadius, collisionLayer);
+            if (hit != null)
+            {
+                Vector2 closestPoint = hit.ClosestPoint(nodes[i].currentPos);
+                Vector2 pushOut = (nodes[i].currentPos - closestPoint);
+                
+                if (pushOut.sqrMagnitude < 0.0001f)
+                {
+                    pushOut = (nodes[i].oldPos - closestPoint).normalized * nodeRadius;
+                }
+                else
+                {
+                    pushOut = pushOut.normalized * nodeRadius;
+                }
+
+                nodes[i].currentPos = closestPoint + pushOut;
+            }
+        }
+    }
     }
 
     private void DrawWeb()
