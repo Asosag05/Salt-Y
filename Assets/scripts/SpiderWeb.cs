@@ -23,7 +23,7 @@ public class SpiderWeb : MonoBehaviour
 
     public float velocidadDisparo = 60f;
 
-    private LineRenderer lineRenderer;
+    public LineRenderer lineRenderer;
     private List<WebNode> nodes = new List<WebNode>();
 
     private Vector2 puntoDeAnclaje;

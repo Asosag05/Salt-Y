@@ -15,7 +15,7 @@ public class movimiento : MonoBehaviour
     [SerializeField] float swingForce = 30f;
     [SerializeField] float maxSwingSpeed = 15f;
 
-    [SerializeField] LayerMask groundLayer;
+    public LayerMask groundLayer;
 
     private float coyoteCounter;
     private float jumpBufferCounter;
@@ -23,6 +23,11 @@ public class movimiento : MonoBehaviour
     private Rigidbody2D rb;
     private BoxCollider2D col;
     private float direction;
+
+    //Variables para los tests
+    public float testHorizontalInput = 0f;
+    public bool testJumpInputDown = false;
+    public bool testJumpInputUp = false;
 
     void Awake()
     {
@@ -33,7 +38,7 @@ public class movimiento : MonoBehaviour
 
    void Update()
     {
-        direction = Input.GetAxisRaw("Horizontal");
+        direction = testHorizontalInput != 0f ? testHorizontalInput : Input.GetAxisRaw("Horizontal");
 
         if (IsGrounded())
         {
@@ -48,7 +53,7 @@ public class movimiento : MonoBehaviour
         bool isSwinging = distanceJoint != null && distanceJoint.enabled;
 
         // Si estamos balanceándonos, 'W' es solo para enrollar la cuerda, no para saltar
-        bool jumpPressed = Input.GetButtonDown("Jump") || (!isSwinging && Input.GetKeyDown(KeyCode.W));
+        bool jumpPressed = testJumpInputDown || Input.GetButtonDown("Jump") || (!isSwinging && Input.GetKeyDown(KeyCode.W));
 
         if (jumpPressed)
         {
@@ -59,7 +64,7 @@ public class movimiento : MonoBehaviour
             jumpBufferCounter -= Time.deltaTime;
         }
 
-        bool jumpReleased = Input.GetButtonUp("Jump") || (!isSwinging && Input.GetKeyUp(KeyCode.W));
+        bool jumpReleased = testJumpInputUp || Input.GetButtonUp("Jump") || (!isSwinging && Input.GetKeyUp(KeyCode.W));
         if (jumpReleased && rb.linearVelocity.y > 0f)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);

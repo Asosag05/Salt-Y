@@ -35,6 +35,10 @@ public class WebLauncher : MonoBehaviour
     private LineRenderer mira;
     private const int SegmentosMira = 24;
 
+    // Variables para los tests
+    public bool testMode = false;
+    public Vector2 testMousePosition = new Vector2(0,0);
+
     void Awake()
     {
       distanceJoint = GetComponent<DistanceJoint2D>();
@@ -108,6 +112,8 @@ public class WebLauncher : MonoBehaviour
 
     private Vector2 ObtenerPosicionRaton()
     {
+        if (testMode) return testMousePosition;
+
         if (cam == null){
             cam = Camera.main;
         }
@@ -229,7 +235,7 @@ public class WebLauncher : MonoBehaviour
     }
 
 
-    private void IntentarEnganche()
+    public void IntentarEnganche()
     {
         if (!puedeDisparar){
             return;
