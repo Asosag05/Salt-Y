@@ -6,6 +6,13 @@ Iglesias Molina, Jose Manuel
 
 Juego ejecutable en Builds/Iteración 2
 Controles:
-Movimiento con WASD y espacio para saltar
-Click izquierdo sobre superficie permitida para lanzar telaraña.
-En telaraña WS para extender o reducir tamaño telaraña.
+[A] -> Desplazarse hacia izquierda
+[D] -> Desplazarse hacia derecha
+[W] / [Espacio] -> Salto
+
+Mantener click izquierdo sobre superficies de color rojo para lanzar telarañas.
+Una vez desplegada la telaraña:
+[A] -> Balanceo hacia izquierda
+[D] -> Balanceo hacia derecha
+[W] -> Ascender
+[D] -> Descender
