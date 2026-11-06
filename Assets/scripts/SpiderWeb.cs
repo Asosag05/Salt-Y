@@ -113,6 +113,7 @@ public class SpiderWeb : MonoBehaviour
         nodes.Clear();
     }
 
+    //Calculo de las fisicas
     private void Simulate()
     {
         for (int i = 0; i < nodes.Count; i++){
@@ -125,6 +126,7 @@ public class SpiderWeb : MonoBehaviour
         }
     }
 
+    //Aplicar limites de distancias, nodos...
     private void ApplyConstraints(){
 
     for (int iteration = 0; iteration < constraintIterations; iteration++)
@@ -190,6 +192,7 @@ public class SpiderWeb : MonoBehaviour
         }
     }
 
+    //Adaptación de la cantidad de nodos con la variación de la distancia.
     public void SincronizarLongitudVisual(float distanciaActual)
     {
         if (!estaDesplegada || nodes.Count < 2 || playerTransform == null) return;

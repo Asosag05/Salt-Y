@@ -10,7 +10,7 @@ public class WebLauncher : MonoBehaviour
 
     [SerializeField] private float velocidadRecoger = 5f; 
     [SerializeField] private float distanciaMinima = 0.8f; 
-    [SerializeField] private float longitudMaximaCuerda = 8f; 
+    [SerializeField] private float longitudMaximaCuerda = 6f; 
 
     public float radioAsistencia = 0.1f;
 
@@ -120,6 +120,7 @@ public class WebLauncher : MonoBehaviour
         return cam.ScreenToWorldPoint(Input.mousePosition);
     }
 
+    //Ayuda de aim para el jugador.
     private bool BuscarObjetivo(Vector2 origen, Vector2 posicionRaton, out Vector2 punto)
     {
         punto = Vector2.zero;
@@ -252,6 +253,7 @@ public class WebLauncher : MonoBehaviour
         }
     }
 
+    //Activador de las físicas de la telaraña.
     private void ConectarFisicas()
     {
        if (distanceJoint != null)
