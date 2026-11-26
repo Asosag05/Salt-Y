@@ -7,7 +7,7 @@ public class WebLauncher : MonoBehaviour
     public float distanciaMax = 15f;
     public LayerMask capasEnganchables;
 
-
+    public LayerMask capasObstaculos;
     [SerializeField] private float velocidadRecoger = 5f; 
     [SerializeField] private float distanciaMinima = 0.8f; 
     [SerializeField] private float longitudMaximaCuerda = 6f; 
@@ -63,7 +63,7 @@ public class WebLauncher : MonoBehaviour
             Vector2 posicionActual = transform.position;
             Vector2 direccionAlAnclaje = puntoDeAnclaje - posicionActual;
             float distancia = direccionAlAnclaje.magnitude;
-            RaycastHit2D hitObstaculo = Physics2D.Raycast(posicionActual, direccionAlAnclaje.normalized, distancia - 0.2f, capasEnganchables);
+            RaycastHit2D hitObstaculo = Physics2D.Raycast(posicionActual, direccionAlAnclaje.normalized, distancia - 0.2f, capasEnganchables | capasObstaculos);
             if (hitObstaculo.collider != null){
                 SoltarEnganche();
             }
@@ -124,7 +124,7 @@ public class WebLauncher : MonoBehaviour
     private bool BuscarObjetivo(Vector2 origen, Vector2 posicionRaton, out Vector2 punto)
     {
         punto = Vector2.zero;
-
+        LayerMask mascaraVision = capasEnganchables | capasObstaculos;
   
         if (radioAsistencia > 0f){
             Collider2D[] cercanos = Physics2D.OverlapCircleAll(posicionRaton, radioAsistencia, capasEnganchables);
@@ -148,7 +148,7 @@ public class WebLauncher : MonoBehaviour
                 }
 
                 // Comprobar línea de visión
-                RaycastHit2D hit = Physics2D.Raycast(origen, haciaCandidato / dist, dist + 0.1f, capasEnganchables);
+                RaycastHit2D hit = Physics2D.Raycast(origen, haciaCandidato / dist, dist + 0.1f, mascaraVision);
                 if (hit.collider == col){
                     mejorDistRaton = distRaton;
                     punto = hit.point;
@@ -166,10 +166,13 @@ public class WebLauncher : MonoBehaviour
         if (direccion.sqrMagnitude < 0.0001f){
             return false;
         }
-        RaycastHit2D directo = Physics2D.Raycast(origen, direccion.normalized, distanciaMax, capasEnganchables);
+        RaycastHit2D directo = Physics2D.Raycast(origen, direccion.normalized, distanciaMax, mascaraVision);
         if (directo.collider != null){
-            punto = directo.point;
-            return true;
+            bool esEnganchable = ((1 << directo.collider.gameObject.layer) & capasEnganchables) != 0;
+            if (esEnganchable){
+                punto = directo.point;
+                return true;
+            }
         }
         return false;
     }

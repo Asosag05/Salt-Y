@@ -15,6 +15,12 @@ public class movimiento : MonoBehaviour
     [SerializeField] float swingForce = 30f;
     [SerializeField] float maxSwingSpeed = 15f;
 
+
+    [SerializeField] float dashSpeed = 18f;
+    [SerializeField] float dashDuration = 0.15f;
+    [SerializeField] float dashCooldown = 0.8f;
+    [SerializeField] float doubleTapTime = 0.25f;
+
     public LayerMask groundLayer;
 
     private float coyoteCounter;
@@ -23,6 +29,17 @@ public class movimiento : MonoBehaviour
     private Rigidbody2D rb;
     private BoxCollider2D col;
     private float direction;
+
+    private bool isDashing;
+    private float dashTimeLeft;
+    private float dashCooldownCounter;
+    private float dashDirection;
+    private float originalGravity;
+    private bool canAirDash = true;
+
+    // Detección de doble pulsación en teclado
+    private float lastTapTime = -1f;
+    private float lastTapDirection = 0f;
 
     //Variables para los tests
     public float testHorizontalInput = 0f;
@@ -34,13 +51,49 @@ public class movimiento : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<BoxCollider2D>();
         distanceJoint = GetComponent<DistanceJoint2D>();
+        originalGravity = rb.gravityScale;
     }
 
    void Update()
     {
         direction = testHorizontalInput != 0f ? testHorizontalInput : Input.GetAxisRaw("Horizontal");
+        // Comprobamos si estamos balanceándonos
+        bool isSwinging = distanceJoint != null && distanceJoint.enabled;
+        bool grounded = IsGrounded();
 
-        if (IsGrounded())
+        if (dashCooldownCounter > 0f)
+        {
+            dashCooldownCounter -= Time.deltaTime;
+        }
+
+        if (grounded || isSwinging)
+        {
+            canAirDash = true;
+        }
+
+        // Si estamos enganchados, limpiamos el historial de pulsaciones y cancelamos cualquier dash activo
+        if (isSwinging)
+        {
+            lastTapDirection = 0f;
+            if (isDashing)
+            {
+                TerminarDash();
+            }
+        }
+
+        if (isDashing)
+        {
+            dashTimeLeft -= Time.deltaTime;
+            if (dashTimeLeft <= 0f)
+            {
+                TerminarDash();
+            }
+            return;
+        }
+
+        DetectarDoblePulsacionTeclado(isSwinging, grounded);
+
+        if (grounded)
         {
             coyoteCounter = coyoteTime;
         }
@@ -48,9 +101,6 @@ public class movimiento : MonoBehaviour
         {
             coyoteCounter -= Time.deltaTime;
         }
-
-        // Comprobamos si estamos balanceándonos
-        bool isSwinging = distanceJoint != null && distanceJoint.enabled;
 
         // Si estamos balanceándonos, 'W' es solo para enrollar la cuerda, no para saltar
         bool jumpPressed = testJumpInputDown || Input.GetButtonDown("Jump") || (!isSwinging && Input.GetKeyDown(KeyCode.W));
@@ -74,6 +124,12 @@ public class movimiento : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (isDashing)
+        {
+            rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
+            return;
+        }
+
         bool isSwinging = distanceJoint != null && distanceJoint.enabled;
 
         if (isSwinging)
@@ -115,6 +171,59 @@ public class movimiento : MonoBehaviour
             jumpBufferCounter = 0f;
             coyoteCounter = 0f;
         }
+    }
+
+
+    private void DetectarDoblePulsacionTeclado(bool isSwinging, bool grounded)
+    {
+        if (isSwinging) return;
+
+        bool pulsoDerecha = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
+        bool pulsoIzquierda = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
+
+        // Si se pulsan ambas direcciones en el mismo frame, ignoramos
+        if (pulsoDerecha == pulsoIzquierda) return;
+
+        float direccionPulsada = pulsoDerecha ? 1f : -1f;
+
+        if (dashCooldownCounter <= 0f && (grounded || canAirDash))
+        {
+            if (direccionPulsada == lastTapDirection && (Time.time - lastTapTime) <= doubleTapTime)
+            {
+                IniciarDash(direccionPulsada, grounded);
+                lastTapDirection = 0f;
+            }
+            else
+            {
+                lastTapDirection = direccionPulsada;
+                lastTapTime = Time.time;
+            }
+        }
+    }
+
+    private void IniciarDash(float dir, bool grounded)
+    {
+        isDashing = true;
+        dashTimeLeft = dashDuration;
+        dashCooldownCounter = dashCooldown;
+        dashDirection = dir;
+
+        if (!grounded)
+        {
+            canAirDash = false;
+        }
+
+        rb.gravityScale = 0f;
+        rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
+    }
+
+    private void TerminarDash()
+    {
+        isDashing = false;
+        rb.gravityScale = originalGravity;
+        //Para que no conserver la inercia al terminar el dash
+        float clampedX = Mathf.Clamp(rb.linearVelocity.x, -maxSpeed, maxSpeed);
+        rb.linearVelocity = new Vector2(clampedX, rb.linearVelocity.y);
     }
 
     public bool IsGrounded()
