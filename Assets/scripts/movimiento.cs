@@ -19,7 +19,6 @@ public class movimiento : MonoBehaviour
     [SerializeField] float dashSpeed = 18f;
     [SerializeField] float dashDuration = 0.15f;
     [SerializeField] float dashCooldown = 0.8f;
-    [SerializeField] float doubleTapTime = 0.25f;
 
     public LayerMask groundLayer;
 
@@ -37,15 +36,12 @@ public class movimiento : MonoBehaviour
     private float originalGravity;
     private bool canAirDash = true;
 
-    // Detección de doble pulsación en teclado
-    private float lastTapTime = -1f;
-    private float lastTapDirection = 0f;
 
     //Variables para los tests
     public float testHorizontalInput = 0f;
     public bool testJumpInputDown = false;
     public bool testJumpInputUp = false;
-
+    public bool testDashInputDown = false;
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -71,14 +67,9 @@ public class movimiento : MonoBehaviour
             canAirDash = true;
         }
 
-        // Si estamos enganchados, limpiamos el historial de pulsaciones y cancelamos cualquier dash activo
-        if (isSwinging)
+        if (isSwinging && isDashing)
         {
-            lastTapDirection = 0f;
-            if (isDashing)
-            {
-                TerminarDash();
-            }
+            TerminarDash();
         }
 
         if (isDashing)
@@ -91,7 +82,7 @@ public class movimiento : MonoBehaviour
             return;
         }
 
-        DetectarDoblePulsacionTeclado(isSwinging, grounded);
+        DetectarDash(isSwinging, grounded);
 
         if (grounded)
         {
@@ -174,30 +165,24 @@ public class movimiento : MonoBehaviour
     }
 
 
-    private void DetectarDoblePulsacionTeclado(bool isSwinging, bool grounded)
+    private void DetectarDash(bool isSwinging, bool grounded)
     {
-        if (isSwinging) return;
+       if (isSwinging) return;
 
-        bool pulsoDerecha = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
-        bool pulsoIzquierda = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
+        bool dashInput = testDashInputDown || Input.GetMouseButtonDown(1);
+        if (!dashInput) return;
 
-        // Si se pulsan ambas direcciones en el mismo frame, ignoramos
-        if (pulsoDerecha == pulsoIzquierda) return;
+        bool derecha = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) || testHorizontalInput > 0f;
+        bool izquierda = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) || testHorizontalInput < 0f;
 
-        float direccionPulsada = pulsoDerecha ? 1f : -1f;
+        // Si no se mantiene ninguna dirección o se pulsan ambas a la vez, no se ejecuta
+        if (derecha == izquierda) return;
+
+        float direccionPulsada = derecha ? 1f : -1f;
 
         if (dashCooldownCounter <= 0f && (grounded || canAirDash))
         {
-            if (direccionPulsada == lastTapDirection && (Time.time - lastTapTime) <= doubleTapTime)
-            {
-                IniciarDash(direccionPulsada, grounded);
-                lastTapDirection = 0f;
-            }
-            else
-            {
-                lastTapDirection = direccionPulsada;
-                lastTapTime = Time.time;
-            }
+            IniciarDash(direccionPulsada, grounded);
         }
     }
 
